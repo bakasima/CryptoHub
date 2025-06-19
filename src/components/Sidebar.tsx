@@ -1,63 +1,66 @@
 
 import React from 'react';
-import { MapPin, Users, Search, Youtube } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { MapPin, Calendar, BookOpen, TrendingUp, Shield } from 'lucide-react';
+
+type ViewType = 'map' | 'events' | 'learning' | 'prices' | 'admin';
 
 interface SidebarProps {
-  currentView: string;
-  onViewChange: (view: 'map' | 'events' | 'learning' | 'prices') => void;
+  currentView: ViewType;
+  onViewChange: (view: ViewType) => void;
+  isAdmin?: boolean;
 }
 
-export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
-  const navItems = [
-    { id: 'map', icon: MapPin, label: 'Event Map', description: 'Discover local crypto events' },
-    { id: 'learning', icon: Search, label: 'Learning Hub', description: 'AI-powered crypto education' },
-    { id: 'prices', icon: Youtube, label: 'Market Data', description: 'Real-time crypto prices' },
+export const Sidebar = ({ currentView, onViewChange, isAdmin = false }: SidebarProps) => {
+  const menuItems = [
+    { id: 'map', label: 'Event Map', icon: MapPin },
+    { id: 'events', label: 'Event Details', icon: Calendar },
+    { id: 'learning', label: 'Learning Hub', icon: BookOpen },
+    { id: 'prices', label: 'Market Data', icon: TrendingUp },
   ];
 
-  return (
-    <div className="w-80 bg-black/20 backdrop-blur-xl border-r border-white/10 p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">CoinHub</h1>
-        <p className="text-gray-300 text-sm">Local crypto community & learning</p>
-      </div>
+  if (isAdmin) {
+    menuItems.push({ id: 'admin', label: 'Admin Panel', icon: Shield });
+  }
 
+  return (
+    <div className="w-64 bg-black/20 backdrop-blur-xl border-r border-white/10 p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white mb-2">CryptoHub</h1>
+        <p className="text-gray-400 text-sm">Discover • Learn • Connect</p>
+      </div>
+      
       <nav className="space-y-2">
-        {navItems.map((item) => {
+        {menuItems.map((item) => {
           const Icon = item.icon;
+          const isActive = currentView === item.id;
+          
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id as any)}
-              className={cn(
-                "w-full p-4 rounded-xl text-left transition-all duration-200 group",
-                currentView === item.id
-                  ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg"
-                  : "text-gray-300 hover:bg-white/5 hover:text-white"
-              )}
+              onClick={() => onViewChange(item.id as ViewType)}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                isActive
+                  ? 'bg-purple-600/30 text-white border border-purple-500/50'
+                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+              }`}
             >
-              <div className="flex items-center space-x-3">
-                <Icon className="w-5 h-5" />
-                <div>
-                  <div className="font-medium">{item.label}</div>
-                  <div className="text-xs opacity-70">{item.description}</div>
-                </div>
-              </div>
+              <Icon className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
             </button>
           );
         })}
       </nav>
-
-      <div className="mt-8 p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl border border-purple-500/20">
+      
+      <div className="mt-8 p-4 bg-purple-900/20 rounded-lg border border-purple-500/30">
         <h3 className="text-white font-medium mb-2">Quick Stats</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-gray-300">
-            <span>Active Events</span>
-            <span className="text-purple-400">12</span>
+            <span>Events Today</span>
+            <span className="text-purple-400">-</span>
           </div>
           <div className="flex justify-between text-gray-300">
-            <span>Community Members</span>
-            <span className="text-blue-400">1,247</span>
+            <span>Community Size</span>
+            <span className="text-blue-400">-</span>
           </div>
         </div>
       </div>

@@ -1,19 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Event {
   id: string;
   title: string;
-  type: string;
+  event_type: string;
   date: string;
   time: string;
   location: string;
   attendees: number;
-  description: string;
-  lat: number;
-  lng: number;
-  cryptoFocus: string[];
+  description: string | null;
+  lat: number | null;
+  lng: number | null;
+  crypto_focus: string[];
 }
 
 interface MapViewProps {
@@ -23,53 +24,47 @@ interface MapViewProps {
 export const MapView = ({ onEventSelect }: MapViewProps) => {
   const [selectedCity, setSelectedCity] = useState('San Francisco');
   const [events, setEvents] = useState<Event[]>([]);
-
-  // Mock events data - in real app this would come from Google Maps API
-  const mockEvents: Event[] = [
-    {
-      id: '1',
-      title: 'DeFi Fundamentals Workshop',
-      type: 'Workshop',
-      date: '2024-12-20',
-      time: '6:00 PM',
-      location: 'TechHub SF, 123 Market St',
-      attendees: 45,
-      description: 'Learn the basics of Decentralized Finance and how to get started.',
-      lat: 37.7749,
-      lng: -122.4194,
-      cryptoFocus: ['DeFi', 'Ethereum', 'Uniswap']
-    },
-    {
-      id: '2',
-      title: 'Bitcoin Trading Strategies',
-      type: 'Meetup',
-      date: '2024-12-22',
-      time: '7:30 PM',
-      location: 'Crypto Café, 456 Mission St',
-      attendees: 32,
-      description: 'Advanced trading strategies and market analysis techniques.',
-      lat: 37.7849,
-      lng: -122.4094,
-      cryptoFocus: ['Bitcoin', 'Trading', 'Technical Analysis']
-    },
-    {
-      id: '3',
-      title: 'NFT Art Exhibition',
-      type: 'Exhibition',
-      date: '2024-12-25',
-      time: '3:00 PM',
-      location: 'Digital Gallery, 789 Folsom St',
-      attendees: 78,
-      description: 'Showcasing the latest NFT artworks from local creators.',
-      lat: 37.7649,
-      lng: -122.4294,
-      cryptoFocus: ['NFT', 'Art', 'Ethereum']
-    }
-  ];
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setEvents(mockEvents);
+    fetchEvents();
   }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching events:', error);
+      } else {
+        setEvents(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (time: string) => {
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -93,62 +88,71 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
       </div>
 
       <div className="flex-1 relative bg-gradient-to-br from-slate-800 to-slate-900">
-        {/* Map placeholder - would integrate Google Maps API here */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-gray-400">
-            <MapPin className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg mb-2">Interactive Map Loading...</p>
-            <p className="text-sm">Google Maps integration will show event locations here</p>
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <p className="text-lg">Loading events...</p>
+            </div>
           </div>
-        </div>
-
-        {/* Event pins overlay */}
-        <div className="absolute inset-0 p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-full overflow-y-auto">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                onClick={() => onEventSelect(event)}
-                className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-4 cursor-pointer hover:bg-black/60 transition-all duration-200 transform hover:scale-105"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold text-lg mb-1">{event.title}</h3>
-                    <span className="text-purple-400 text-sm bg-purple-900/30 px-2 py-1 rounded-full">
-                      {event.type}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm text-gray-300">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{event.date} at {event.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4" />
-                    <span>{event.attendees} attending</span>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {event.cryptoFocus.map((crypto) => (
-                    <span
-                      key={crypto}
-                      className="text-xs bg-blue-900/30 text-blue-400 px-2 py-1 rounded-full"
-                    >
-                      {crypto}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+        ) : events.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <MapPin className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg mb-2">No events found</p>
+              <p className="text-sm">Check back later for new events!</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="absolute inset-0 p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-full overflow-y-auto">
+              {events.map((event) => (
+                <div
+                  key={event.id}
+                  onClick={() => onEventSelect(event)}
+                  className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-4 cursor-pointer hover:bg-black/60 transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg mb-1">{event.title}</h3>
+                      <span className="text-purple-400 text-sm bg-purple-900/30 px-2 py-1 rounded-full">
+                        {event.event_type}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-300">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatDate(event.date)} at {formatTime(event.time)}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{event.location}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4" />
+                      <span>{event.attendees} attending</span>
+                    </div>
+                  </div>
+
+                  {event.crypto_focus && event.crypto_focus.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {event.crypto_focus.map((crypto) => (
+                        <span
+                          key={crypto}
+                          className="text-xs bg-blue-900/30 text-blue-400 px-2 py-1 rounded-full"
+                        >
+                          {crypto}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
