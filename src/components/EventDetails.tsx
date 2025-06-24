@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, ArrowUp, ArrowDown } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface EventDetailsProps {
   event: any;
   compact?: boolean;
+  onBack?: () => void;
 }
 
-export const EventDetails = ({ event, compact = false }: EventDetailsProps) => {
+export const EventDetails = ({ event, compact = false, onBack }: EventDetailsProps) => {
   const [aiInsights, setAiInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -105,6 +106,16 @@ export const EventDetails = ({ event, compact = false }: EventDetailsProps) => {
   return (
     <div className="h-full overflow-y-auto p-6 bg-gradient-to-br from-slate-900 to-slate-800">
       <div className="max-w-4xl mx-auto space-y-6">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Events</span>
+          </button>
+        )}
+        
         <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
           <h1 className="text-3xl font-bold text-white mb-4">{event.title}</h1>
           

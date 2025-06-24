@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { MapPin, TrendingUp, BookOpen, Settings, Blocks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
-type ViewType = 'map' | 'events' | 'learning' | 'prices' | 'admin';
+type ViewType = 'map' | 'prices' | 'learning' | 'blockchain' | 'admin';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -40,7 +41,7 @@ export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id as any)}
+              onClick={() => onViewChange(item.id as ViewType)}
               className={cn(
                 "w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
                 isActive
