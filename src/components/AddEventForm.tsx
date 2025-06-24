@@ -1,243 +1,238 @@
 
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, X } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AddEventFormProps {
   onEventAdded: () => void;
-  onCancel: () => void;
 }
 
-export const AddEventForm = ({ onEventAdded, onCancel }: AddEventFormProps) => {
+export const AddEventForm = ({ onEventAdded }: AddEventFormProps) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    event_type: '',
+    event_type: 'conference',
     date: '',
     time: '',
     location: '',
-    lat: '',
-    lng: '',
+    attendees: 0,
+    description: '',
+    lat: null as number | null,
+    lng: null as number | null,
+    crypto_focus: [] as string[]
   });
-  const [cryptoFocus, setCryptoFocus] = useState<string[]>([]);
-  const [newCrypto, setNewCrypto] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [cryptoInput, setCryptoInput] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const addCryptoFocus = () => {
-    if (newCrypto.trim() && !cryptoFocus.includes(newCrypto.trim())) {
-      setCryptoFocus(prev => [...prev, newCrypto.trim()]);
-      setNewCrypto('');
-    }
-  };
-
-  const removeCryptoFocus = (crypto: string) => {
-    setCryptoFocus(prev => prev.filter(c => c !== crypto));
-  };
+  const eventTypes = [
+    { value: 'conference', label: 'Conference' },
+    { value: 'workshop', label: 'Workshop' },
+    { value: 'meetup', label: 'Meetup' },
+    { value: 'exhibition', label: 'Exhibition' },
+    { value: 'hackathon', label: 'Hackathon' }
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    if (!user) return;
+
     setLoading(true);
-
     try {
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        event_type: formData.event_type,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location,
-        lat: formData.lat ? parseFloat(formData.lat) : null,
-        lng: formData.lng ? parseFloat(formData.lng) : null,
-        crypto_focus: cryptoFocus,
-      };
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('events')
-        .insert([eventData]);
+        .insert([{
+          ...formData,
+          created_by: user.id,
+          attendees: Number(formData.attendees)
+        }])
+        .select();
 
-      if (error) {
-        setError(error.message);
-      } else {
-        toast({
-          title: "Success",
-          description: "Event created successfully!",
-        });
-        onEventAdded();
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
+      if (error) throw error;
+
+      console.log('Event created:', data);
+      onEventAdded();
+    } catch (error) {
+      console.error('Error creating event:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const addCryptoFocus = () => {
+    if (cryptoInput.trim() && !formData.crypto_focus.includes(cryptoInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        crypto_focus: [...prev.crypto_focus, cryptoInput.trim()]
+      }));
+      setCryptoInput('');
+    }
+  };
+
+  const removeCryptoFocus = (crypto: string) => {
+    setFormData(prev => ({
+      ...prev,
+      crypto_focus: prev.crypto_focus.filter(c => c !== crypto)
+    }));
+  };
+
   return (
-    <Card className="w-full max-w-2xl bg-black/40 backdrop-blur-xl border-white/20">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-bold text-white">Add New Event</CardTitle>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onCancel}
-          className="text-gray-400 hover:text-white"
-        >
-          <X className="w-5 h-5" />
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Input
+            <label className="block text-white font-medium mb-2">Event Title</label>
+            <input
+              type="text"
               name="title"
-              placeholder="Event Title"
               value={formData.title}
               onChange={handleInputChange}
               required
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Enter event title"
             />
           </div>
+
           <div>
-            <Textarea
-              name="description"
-              placeholder="Event Description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
+            <label className="block text-white font-medium mb-2">Event Type</label>
+            <select
               name="event_type"
-              placeholder="Event Type (e.g., Workshop, Meetup)"
               value={formData.event_type}
               onChange={handleInputChange}
-              required
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-            <Input
-              name="location"
-              placeholder="Location"
-              value={formData.location}
-              onChange={handleInputChange}
-              required
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              {eventTypes.map(type => (
+                <option key={type.value} value={type.value} className="bg-slate-800">
+                  {type.label}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              name="date"
+
+          <div>
+            <label className="block text-white font-medium mb-2">Date</label>
+            <input
               type="date"
+              name="date"
               value={formData.date}
               onChange={handleInputChange}
               required
-              className="bg-white/10 border-white/20 text-white"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-            <Input
-              name="time"
+          </div>
+
+          <div>
+            <label className="block text-white font-medium mb-2">Time</label>
+            <input
               type="time"
+              name="time"
               value={formData.time}
               onChange={handleInputChange}
               required
-              className="bg-white/10 border-white/20 text-white"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              name="lat"
-              type="number"
-              step="any"
-              placeholder="Latitude (optional)"
-              value={formData.lat}
-              onChange={handleInputChange}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-            <Input
-              name="lng"
-              type="number"
-              step="any"
-              placeholder="Longitude (optional)"
-              value={formData.lng}
-              onChange={handleInputChange}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-          </div>
-          
+
           <div>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add crypto focus (e.g., Bitcoin, DeFi)"
-                value={newCrypto}
-                onChange={(e) => setNewCrypto(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCryptoFocus())}
-              />
-              <Button
-                type="button"
-                onClick={addCryptoFocus}
-                size="icon"
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {cryptoFocus.map((crypto) => (
-                <span
-                  key={crypto}
-                  className="bg-blue-900/30 text-blue-400 px-2 py-1 rounded-full text-sm flex items-center gap-1"
-                >
-                  {crypto}
-                  <button
-                    type="button"
-                    onClick={() => removeCryptoFocus(crypto)}
-                    className="text-blue-300 hover:text-blue-100"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
+            <label className="block text-white font-medium mb-2">Location</label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleInputChange}
+              required
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="City, State or Address"
+            />
           </div>
 
-          {error && (
-            <Alert className="bg-red-900/30 border-red-500/50">
-              <AlertDescription className="text-red-200">{error}</AlertDescription>
-            </Alert>
-          )}
+          <div>
+            <label className="block text-white font-medium mb-2">Expected Attendees</label>
+            <input
+              type="number"
+              name="attendees"
+              value={formData.attendees}
+              onChange={handleInputChange}
+              min="0"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+        </div>
 
-          <div className="flex gap-4">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {loading ? 'Creating...' : 'Create Event'}
-            </Button>
-            <Button
+        <div>
+          <label className="block text-white font-medium mb-2">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows={4}
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Describe your event..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-white font-medium mb-2">Crypto Focus</label>
+          <div className="flex space-x-2 mb-3">
+            <input
+              type="text"
+              value={cryptoInput}
+              onChange={(e) => setCryptoInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCryptoFocus())}
+              className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Add cryptocurrency (e.g., Bitcoin, Ethereum)"
+            />
+            <button
               type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="border-white/20 text-white hover:bg-white/10"
+              onClick={addCryptoFocus}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Cancel
-            </Button>
+              Add
+            </button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+          <div className="flex flex-wrap gap-2">
+            {formData.crypto_focus.map((crypto) => (
+              <span
+                key={crypto}
+                className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-full text-sm flex items-center space-x-2"
+              >
+                <span>{crypto}</span>
+                <button
+                  type="button"
+                  onClick={() => removeCryptoFocus(crypto)}
+                  className="text-purple-300 hover:text-white"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={onEventAdded}
+            className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Creating...' : 'Create Event'}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };

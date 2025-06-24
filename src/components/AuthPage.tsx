@@ -1,114 +1,155 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 export const AuthPage = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
-      let result;
-      if (isSignUp) {
-        result = await signUp(email, password, fullName);
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (error) throw error;
       } else {
-        result = await signIn(email, password);
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+            },
+          },
+        });
+        if (error) throw error;
       }
-
-      if (result.error) {
-        setError(result.error.message);
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
+    } catch (error: any) {
+      console.error('Auth error:', error.message);
+      alert(error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-black/40 backdrop-blur-xl border-white/20">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-white">
-            {isSignUp ? 'Create Account' : 'Admin Login'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
+    <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+      <div className="max-w-md w-full">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {isLogin ? 'Welcome Back' : 'Join CryptoHub'}
+            </h1>
+            <p className="text-gray-300">
+              {isLogin 
+                ? 'Sign in to access the admin panel' 
+                : 'Create an account to manage events'
+              }
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {!isLogin && (
               <div>
-                <Input
-                  type="text"
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-                />
+                <label className="block text-white font-medium mb-2">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    required={!isLogin}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
               </div>
             )}
+
             <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              />
+              <label className="block text-white font-medium mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your email"
+                />
+              </div>
             </div>
+
             <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              />
+              <label className="block text-white font-medium mb-2">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your password"
+                />
+              </div>
             </div>
-            {error && (
-              <Alert className="bg-red-900/30 border-red-500/50">
-                <AlertDescription className="text-red-200">{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button
+
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center space-x-2"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              {isSignUp ? 'Sign Up' : 'Sign In'}
-            </Button>
+              <span>{loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}</span>
+              {!loading && <ArrowRight className="w-5 h-5" />}
+            </button>
           </form>
-          <div className="mt-4 text-center">
+
+          <div className="mt-6 text-center">
             <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-purple-400 hover:text-purple-300 text-sm"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-purple-400 hover:text-purple-300 transition-colors"
             >
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Sign up"}
+              {isLogin 
+                ? "Don't have an account? Sign up" 
+                : "Already have an account? Sign in"
+              }
             </button>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="text-center text-gray-400 text-sm">
+              Demo credentials for testing:
+            </p>
+            <p className="text-center text-gray-300 text-sm mt-1">
+              Email: admin@cryptohub.com<br />
+              Password: admin123
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
