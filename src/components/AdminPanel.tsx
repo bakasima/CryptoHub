@@ -3,11 +3,15 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AddEventForm } from './AddEventForm';
 import { Button } from '@/components/ui/button';
-import { Plus, LogOut } from 'lucide-react';
+import { Plus, LogOut, Database } from 'lucide-react';
+import { seedDefaultEvents } from '@/utils/seedEvents';
+import { useToast } from '@/hooks/use-toast';
 
 export const AdminPanel = () => {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const { profile, signOut } = useAuth();
+  const { toast } = useToast();
 
   if (!profile?.is_admin) {
     return (
@@ -24,6 +28,37 @@ export const AdminPanel = () => {
     setShowAddForm(false);
   };
 
+  const handleSeedEvents = async () => {
+    if (!profile?.id) return;
+    
+    setIsSeeding(true);
+    try {
+      const result = await seedDefaultEvents(profile.id);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Default events have been added to the database.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to seed events. They may already exist.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error seeding events:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while seeding events.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   return (
     <div className="h-full p-6 bg-gradient-to-br from-slate-900 to-slate-800 overflow-y-auto">
       <div className="max-w-4xl mx-auto">
@@ -33,6 +68,14 @@ export const AdminPanel = () => {
             <p className="text-gray-300">Welcome, {profile.full_name || profile.email}</p>
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={handleSeedEvents}
+              disabled={isSeeding}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Database className="w-4 h-4 mr-2" />
+              {isSeeding ? 'Adding...' : 'Seed Events'}
+            </Button>
             <Button
               onClick={() => setShowAddForm(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
@@ -62,7 +105,7 @@ export const AdminPanel = () => {
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Event Management</h2>
             <p className="text-gray-300 mb-4">
-              Use the "Add Event" button to create new crypto events for the community.
+              Manage crypto events for the community. Use "Seed Events" to add sample blockchain events, or create custom events with "Add Event".
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div className="bg-white/5 rounded-lg p-4">
