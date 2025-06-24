@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { Search, Users, ArrowUp } from 'lucide-react';
+import { useLearningContent } from '@/hooks/useLearningContent';
 
 export const LearningHub = () => {
   const [selectedTopic, setSelectedTopic] = useState('DeFi');
-  const [generatingContent, setGeneratingContent] = useState(false);
+  const { content, loading: generatingContent, generateContent } = useLearningContent();
 
   const topics = [
     { id: 'DeFi', name: 'Decentralized Finance', level: 'Beginner', popularity: 95 },
@@ -15,9 +16,12 @@ export const LearningHub = () => {
     { id: 'Security', name: 'Crypto Security', level: 'Advanced', popularity: 84 }
   ];
 
-  const generateContent = () => {
-    setGeneratingContent(true);
-    setTimeout(() => setGeneratingContent(false), 2000);
+  const selectedTopicData = topics.find(t => t.id === selectedTopic);
+
+  const handleGenerateContent = () => {
+    if (selectedTopicData) {
+      generateContent(selectedTopicData.name, selectedTopicData.level);
+    }
   };
 
   const getLevelColor = (level: string) => {
@@ -34,7 +38,7 @@ export const LearningHub = () => {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">AI-Powered Learning Hub</h1>
-          <p className="text-gray-300">Personalized crypto education powered by advanced AI</p>
+          <p className="text-gray-300">Personalized crypto education powered by OpenAI</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -98,13 +102,13 @@ export const LearningHub = () => {
             <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-white">
-                  Learning: {topics.find(t => t.id === selectedTopic)?.name}
+                  Learning: {selectedTopicData?.name}
                 </h2>
                 <button
-                  onClick={generateContent}
+                  onClick={handleGenerateContent}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  {generatingContent ? 'Generating...' : 'Generate New Content'}
+                  {generatingContent ? 'Generating...' : 'Generate AI Content'}
                 </button>
               </div>
 
@@ -112,85 +116,21 @@ export const LearningHub = () => {
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">AI is generating personalized content...</p>
+                    <p className="text-gray-400">OpenAI is generating personalized content...</p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {selectedTopic === 'DeFi' && (
-                    <>
-                      <div>
-                        <h3 className="text-xl font-semibold text-white mb-3">What is Decentralized Finance (DeFi)?</h3>
-                        <p className="text-gray-300 leading-relaxed mb-4">
-                          Decentralized Finance (DeFi) represents a paradigm shift in financial services, moving away from traditional centralized institutions to blockchain-based protocols. DeFi applications run on smart contracts, primarily on the Ethereum blockchain, enabling users to lend, borrow, trade, and earn interest without intermediaries.
-                        </p>
-                        <p className="text-gray-300 leading-relaxed">
-                          Key benefits include 24/7 accessibility, global reach, transparency, and often higher yields compared to traditional finance. However, it also comes with risks like smart contract vulnerabilities and market volatility.
-                        </p>
+                  {content ? (
+                    <div className="prose prose-invert max-w-none">
+                      <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {content}
                       </div>
-
-                      <div>
-                        <h3 className="text-xl font-semibold text-white mb-3">Popular DeFi Protocols</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {[
-                            { name: 'Uniswap', desc: 'Decentralized exchange for token swapping' },
-                            { name: 'Aave', desc: 'Lending and borrowing protocol' },
-                            { name: 'Compound', desc: 'Algorithmic money market protocol' },
-                            { name: 'MakerDAO', desc: 'Decentralized autonomous organization' }
-                          ].map((protocol) => (
-                            <div key={protocol.name} className="bg-white/5 rounded-lg p-4">
-                              <h4 className="text-purple-400 font-medium mb-2">{protocol.name}</h4>
-                              <p className="text-gray-400 text-sm">{protocol.desc}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-xl font-semibold text-white mb-3">Getting Started with DeFi</h3>
-                        <ol className="space-y-2 text-gray-300">
-                          <li className="flex items-start space-x-3">
-                            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5">1</span>
-                            <span>Set up a Web3 wallet (MetaMask, Trust Wallet)</span>
-                          </li>
-                          <li className="flex items-start space-x-3">
-                            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5">2</span>
-                            <span>Purchase cryptocurrency (ETH for Ethereum DeFi)</span>
-                          </li>
-                          <li className="flex items-start space-x-3">
-                            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5">3</span>
-                            <span>Research and understand the protocols you want to use</span>
-                          </li>
-                          <li className="flex items-start space-x-3">
-                            <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-0.5">4</span>
-                            <span>Start with small amounts to learn and gain experience</span>
-                          </li>
-                        </ol>
-                      </div>
-                    </>
-                  )}
-
-                  {selectedTopic === 'NFT' && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-3">Understanding Non-Fungible Tokens (NFTs)</h3>
-                      <p className="text-gray-300 leading-relaxed mb-4">
-                        Non-Fungible Tokens (NFTs) are unique digital assets that represent ownership of specific items or content on the blockchain. Unlike cryptocurrencies which are fungible (interchangeable), each NFT has distinct properties that make it one-of-a-kind.
-                      </p>
-                      <p className="text-gray-300 leading-relaxed">
-                        NFTs have revolutionized digital ownership, enabling creators to monetize digital art, music, videos, and even virtual real estate. They provide proof of authenticity and ownership in the digital realm.
-                      </p>
                     </div>
-                  )}
-
-                  {selectedTopic === 'Bitcoin' && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-3">Bitcoin: The First Cryptocurrency</h3>
-                      <p className="text-gray-300 leading-relaxed mb-4">
-                        Bitcoin, created by the pseudonymous Satoshi Nakamoto in 2009, was the first successful implementation of a decentralized digital currency. It operates on a peer-to-peer network without the need for central authorities or intermediaries.
-                      </p>
-                      <p className="text-gray-300 leading-relaxed">
-                        Bitcoin's revolutionary blockchain technology ensures transparency, security, and immutability of transactions, making it a store of value and medium of exchange that has gained widespread adoption.
-                      </p>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-400 mb-4">Click "Generate AI Content" to create personalized learning material</p>
+                      <p className="text-sm text-gray-500">Powered by OpenAI's advanced language models</p>
                     </div>
                   )}
                 </div>

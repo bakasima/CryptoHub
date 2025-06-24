@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useCryptoPrices } from '@/hooks/useCryptoPrices';
+import { useAIInsights } from '@/hooks/useAIInsights';
 
 interface EventDetailsProps {
   event: any;
@@ -10,54 +11,22 @@ interface EventDetailsProps {
 }
 
 export const EventDetails = ({ event, compact = false, onBack }: EventDetailsProps) => {
-  const [aiInsights, setAiInsights] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const { data: allCryptoPrices } = useCryptoPrices();
+  const { insights, loading: aiLoading, generateInsights } = useAIInsights();
 
-  // Fetch crypto prices for event-related cryptocurrencies
-  const { data: cryptoPrices } = useQuery({
-    queryKey: ['cryptoPrices', event?.cryptoFocus],
-    queryFn: async () => {
-      if (!event?.cryptoFocus) return null;
-      
-      // Mock Coinbase API call - in real app would use actual Coinbase API
-      const mockPrices = {
-        'Bitcoin': { price: 43250, change: 2.3 },
-        'Ethereum': { price: 2650, change: -1.2 },
-        'DeFi': { price: 1250, change: 4.1 },
-        'NFT': { price: 850, change: -0.8 },
-        'Uniswap': { price: 6.75, change: 1.9 }
-      };
-      
-      return event.cryptoFocus.map((crypto: string) => ({
-        name: crypto,
-        ...mockPrices[crypto as keyof typeof mockPrices] || { price: 100, change: 0 }
-      }));
-    },
-    enabled: !!event?.cryptoFocus
-  });
-
-  const generateAIInsights = async () => {
-    if (!event) return;
-    
-    setLoading(true);
-    try {
-      // Mock OpenAI API call - in real app would use actual OpenAI API
-      setTimeout(() => {
-        const insights = `Based on the current market conditions, ${event.title} is particularly relevant as ${event.cryptoFocus.join(', ')} have shown interesting trends recently. This event will provide valuable insights into market movements and practical applications of these technologies.`;
-        setAiInsights(insights);
-        setLoading(false);
-      }, 1500);
-    } catch (error) {
-      console.error('Error generating AI insights:', error);
-      setLoading(false);
-    }
-  };
+  // Filter crypto prices for event-related cryptocurrencies
+  const cryptoPrices = allCryptoPrices?.filter(crypto => 
+    event?.cryptoFocus?.some((focus: string) => 
+      crypto.name.toLowerCase().includes(focus.toLowerCase()) ||
+      crypto.symbol.toLowerCase().includes(focus.toLowerCase())
+    )
+  );
 
   useEffect(() => {
-    if (event && !compact) {
-      generateAIInsights();
+    if (event && !compact && event.cryptoFocus) {
+      generateInsights(event.title, event.cryptoFocus, allCryptoPrices);
     }
-  }, [event, compact]);
+  }, [event, compact, allCryptoPrices]);
 
   if (!event) {
     return (
@@ -84,13 +53,13 @@ export const EventDetails = ({ event, compact = false, onBack }: EventDetailsPro
             <span>{event.location}</span>
           </div>
         </div>
-        {cryptoPrices && (
+        {cryptoPrices && cryptoPrices.length > 0 && (
           <div className="mt-3 flex space-x-2">
             {cryptoPrices.slice(0, 2).map((crypto: any) => (
               <div key={crypto.name} className="text-xs bg-blue-900/30 text-blue-400 px-2 py-1 rounded-full flex items-center space-x-1">
-                <span>{crypto.name}</span>
+                <span>{crypto.symbol}</span>
                 <span>${crypto.price.toLocaleString()}</span>
-                {crypto.change > 0 ? (
+                {crypto.change24h > 0 ? (
                   <ArrowUp className="w-3 h-3 text-green-400" />
                 ) : (
                   <ArrowDown className="w-3 h-3 text-red-400" />
@@ -146,7 +115,7 @@ export const EventDetails = ({ event, compact = false, onBack }: EventDetailsPro
           <p className="text-gray-300 leading-relaxed">{event.description}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {event.cryptoFocus.map((crypto: string) => (
+            {event.cryptoFocus?.map((crypto: string) => (
               <span
                 key={crypto}
                 className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-full text-sm"
@@ -158,22 +127,22 @@ export const EventDetails = ({ event, compact = false, onBack }: EventDetailsPro
         </div>
 
         {/* Real-time Crypto Prices */}
-        {cryptoPrices && (
+        {cryptoPrices && cryptoPrices.length > 0 && (
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Related Crypto Prices</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">Related Crypto Prices (Live)</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {cryptoPrices.map((crypto: any) => (
                 <div key={crypto.name} className="bg-white/5 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-300 font-medium">{crypto.name}</span>
                     <div className="flex items-center space-x-2">
-                      {crypto.change > 0 ? (
+                      {crypto.change24h > 0 ? (
                         <ArrowUp className="w-4 h-4 text-green-400" />
                       ) : (
                         <ArrowDown className="w-4 h-4 text-red-400" />
                       )}
-                      <span className={crypto.change > 0 ? 'text-green-400' : 'text-red-400'}>
-                        {crypto.change > 0 ? '+' : ''}{crypto.change}%
+                      <span className={crypto.change24h > 0 ? 'text-green-400' : 'text-red-400'}>
+                        {crypto.change24h > 0 ? '+' : ''}{crypto.change24h.toFixed(2)}%
                       </span>
                     </div>
                   </div>
@@ -188,14 +157,16 @@ export const EventDetails = ({ event, compact = false, onBack }: EventDetailsPro
 
         {/* AI-Generated Insights */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">AI Insights</h2>
-          {loading ? (
+          <h2 className="text-xl font-semibold text-white mb-4">AI Market Insights</h2>
+          {aiLoading ? (
             <div className="flex items-center space-x-3 text-gray-400">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
-              <span>Generating personalized insights...</span>
+              <span>Generating personalized insights with OpenAI...</span>
             </div>
           ) : (
-            <p className="text-gray-300 leading-relaxed">{aiInsights}</p>
+            <p className="text-gray-300 leading-relaxed">
+              {insights || 'AI insights will appear here once generated.'}
+            </p>
           )}
         </div>
       </div>

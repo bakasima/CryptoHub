@@ -1,83 +1,11 @@
 
 import React, { useState } from 'react';
 import { ArrowUp, ArrowDown, Search, Users } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useCryptoPrices } from '@/hooks/useCryptoPrices';
 
 export const CryptoPrices = () => {
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Mock crypto data - in real app would use Coinbase API
-  const { data: cryptoData } = useQuery({
-    queryKey: ['allCryptoPrices'],
-    queryFn: async () => {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return [
-        { 
-          id: 'bitcoin', 
-          name: 'Bitcoin', 
-          symbol: 'BTC', 
-          price: 43250.75, 
-          change24h: 2.34, 
-          volume: 28500000000,
-          marketCap: 847000000000,
-          events: 3
-        },
-        { 
-          id: 'ethereum', 
-          name: 'Ethereum', 
-          symbol: 'ETH', 
-          price: 2654.32, 
-          change24h: -1.23, 
-          volume: 15200000000,
-          marketCap: 319000000000,
-          events: 8
-        },
-        { 
-          id: 'binancecoin', 
-          name: 'BNB', 
-          symbol: 'BNB', 
-          price: 315.67, 
-          change24h: 0.87, 
-          volume: 1800000000,
-          marketCap: 47200000000,
-          events: 2
-        },
-        { 
-          id: 'solana', 
-          name: 'Solana', 
-          symbol: 'SOL', 
-          price: 98.45, 
-          change24h: 4.12, 
-          volume: 2100000000,
-          marketCap: 42800000000,
-          events: 5
-        },
-        { 
-          id: 'cardano', 
-          name: 'Cardano', 
-          symbol: 'ADA', 
-          price: 0.5234, 
-          change24h: -2.1, 
-          volume: 890000000,
-          marketCap: 18400000000,
-          events: 1
-        },
-        { 
-          id: 'avalanche', 
-          name: 'Avalanche', 
-          symbol: 'AVAX', 
-          price: 42.18, 
-          change24h: 3.45, 
-          volume: 680000000,
-          marketCap: 15900000000,
-          events: 3
-        }
-      ];
-    },
-    refetchInterval: 30000 // Refetch every 30 seconds
-  });
+  const { data: cryptoData, isLoading, error } = useCryptoPrices();
 
   const filteredData = cryptoData?.filter(crypto =>
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,6 +27,17 @@ export const CryptoPrices = () => {
     }
     return `$${num.toFixed(2)}`;
   };
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center text-red-400">
+        <div className="text-center">
+          <p className="text-xl mb-2">Failed to load crypto data</p>
+          <p className="text-sm text-gray-400">Please check your connection and try again</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto p-6 bg-gradient-to-br from-slate-900 to-slate-800">
@@ -125,7 +64,9 @@ export const CryptoPrices = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
             <h3 className="text-gray-400 text-sm mb-2">Total Market Cap</h3>
-            <p className="text-2xl font-bold text-white">$1.7T</p>
+            <p className="text-2xl font-bold text-white">
+              {cryptoData ? formatNumber(cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0)) : '$1.7T'}
+            </p>
             <div className="flex items-center space-x-1 mt-2">
               <ArrowUp className="w-4 h-4 text-green-400" />
               <span className="text-green-400 text-sm">+2.1%</span>
@@ -134,7 +75,9 @@ export const CryptoPrices = () => {
           
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
             <h3 className="text-gray-400 text-sm mb-2">24h Volume</h3>
-            <p className="text-2xl font-bold text-white">$89.2B</p>
+            <p className="text-2xl font-bold text-white">
+              {cryptoData ? formatNumber(cryptoData.reduce((sum, crypto) => sum + crypto.volume, 0)) : '$89.2B'}
+            </p>
             <div className="flex items-center space-x-1 mt-2">
               <ArrowDown className="w-4 h-4 text-red-400" />
               <span className="text-red-400 text-sm">-5.3%</span>
@@ -143,7 +86,9 @@ export const CryptoPrices = () => {
           
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
             <h3 className="text-gray-400 text-sm mb-2">Active Events</h3>
-            <p className="text-2xl font-bold text-white">22</p>
+            <p className="text-2xl font-bold text-white">
+              {cryptoData ? cryptoData.reduce((sum, crypto) => sum + crypto.events, 0) : '22'}
+            </p>
             <div className="flex items-center space-x-1 mt-2">
               <Users className="w-4 h-4 text-blue-400" />
               <span className="text-blue-400 text-sm">This week</span>
@@ -152,7 +97,11 @@ export const CryptoPrices = () => {
           
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
             <h3 className="text-gray-400 text-sm mb-2">BTC Dominance</h3>
-            <p className="text-2xl font-bold text-white">51.2%</p>
+            <p className="text-2xl font-bold text-white">
+              {cryptoData && cryptoData[0] ? 
+                ((cryptoData[0].marketCap / cryptoData.reduce((sum, crypto) => sum + crypto.marketCap, 0)) * 100).toFixed(1) + '%' 
+                : '51.2%'}
+            </p>
             <div className="flex items-center space-x-1 mt-2">
               <ArrowUp className="w-4 h-4 text-green-400" />
               <span className="text-green-400 text-sm">+0.8%</span>
@@ -229,7 +178,7 @@ export const CryptoPrices = () => {
           </div>
         </div>
 
-        {!cryptoData && (
+        {isLoading && (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
