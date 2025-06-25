@@ -11,6 +11,7 @@ interface BlogPost {
   excerpt: string | null;
   created_at: string;
   author_id: string;
+  published: boolean;
   profiles: {
     full_name: string | null;
     email: string;
