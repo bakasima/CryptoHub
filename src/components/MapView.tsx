@@ -16,6 +16,7 @@ interface Event {
   lat: number | null;
   lng: number | null;
   crypto_focus: string[];
+  image_url?: string;
 }
 
 interface MapViewProps {
@@ -32,6 +33,23 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
 
   useEffect(() => {
     fetchEvents();
+    
+    // Set up real-time subscription for events
+    const subscription = supabase
+      .channel('events-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'events'
+      }, (payload) => {
+        console.log('Event change detected:', payload);
+        fetchEvents(); // Refresh events when changes occur
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchEvents = async () => {
@@ -44,6 +62,7 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
       if (error) throw error;
       
       if (data && data.length > 0) {
+        console.log('Fetched events:', data);
         setEvents(data);
       } else {
         // Create sample events if none exist
@@ -210,6 +229,16 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
                   onClick={() => handleEventClick(event)}
                   className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6 hover:bg-white/5 transition-all duration-200 cursor-pointer"
                 >
+                  {event.image_url && (
+                    <div className="mb-4">
+                      <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-xl font-semibold text-white mb-2">{event.title}</h3>

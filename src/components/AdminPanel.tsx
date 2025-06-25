@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Users, TrendingUp, Calendar, Settings, Plus, Edit, Trash2, Eye, MessageSquare, FileText, LogOut } from 'lucide-react';
+import { Users, TrendingUp, Calendar, Settings, Plus, Edit, Trash2, Eye, MessageSquare, FileText, LogOut, Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AddEventForm } from './AddEventForm';
@@ -17,6 +16,7 @@ interface Event {
   attendees: number;
   description: string | null;
   crypto_focus: string[];
+  image_url?: string;
 }
 
 interface BlogPost {
@@ -158,7 +158,7 @@ export const AdminPanel = () => {
 
   const handleEventAdded = () => {
     setShowAddEvent(false);
-    fetchAdminData();
+    fetchAdminData(); // Refresh the data after adding
   };
 
   const handleBlogAdded = () => {
