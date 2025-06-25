@@ -1,9 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-export const AuthPage = () => {
+interface AuthPageProps {
+  onSuccess?: () => void;
+}
+
+export const AuthPage = ({ onSuccess }: AuthPageProps) => {
+  const { user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -11,6 +17,13 @@ export const AuthPage = () => {
     password: '',
     fullName: ''
   });
+
+  // Close modal when user logs in successfully
+  useEffect(() => {
+    if (user && onSuccess) {
+      onSuccess();
+    }
+  }, [user, onSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +37,12 @@ export const AuthPage = () => {
         });
         if (error) throw error;
       } else {
+        const redirectUrl = `${window.location.origin}/`;
         const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
+            emailRedirectTo: redirectUrl,
             data: {
               full_name: formData.fullName,
             },
@@ -51,104 +66,100 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-6">
-      <div className="max-w-md w-full">
-        <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {isLogin ? 'Welcome Back' : 'Join CryptoHub'}
-            </h1>
-            <p className="text-gray-300">
-              {isLogin 
-                ? 'Sign in to access the admin panel' 
-                : 'Create an account to manage events'
-              }
-            </p>
-          </div>
+    <div className="w-full">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-white mb-2">
+          {isLogin ? 'Welcome Back' : 'Join CryptoHub'}
+        </h1>
+        <p className="text-gray-300 text-sm">
+          {isLogin 
+            ? 'Sign in to access the admin panel' 
+            : 'Create an account to manage events'
+          }
+        </p>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
-              <div>
-                <label className="block text-white font-medium mb-2">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    required={!isLogin}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-white font-medium mb-2">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter your email"
-                />
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {!isLogin && (
+          <div>
+            <label className="block text-white font-medium mb-2 text-sm">Full Name</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                required={!isLogin}
+                className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                placeholder="Enter your full name"
+              />
             </div>
-
-            <div>
-              <label className="block text-white font-medium mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter your password"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center space-x-2"
-            >
-              <span>{loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}</span>
-              {!loading && <ArrowRight className="w-5 h-5" />}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
-              }
-            </button>
           </div>
+        )}
 
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-center text-gray-400 text-sm">
-              Demo credentials for testing:
-            </p>
-            <p className="text-center text-gray-300 text-sm mt-1">
-              Email: admin@cryptohub.com<br />
-              Password: admin123
-            </p>
+        <div>
+          <label className="block text-white font-medium mb-2 text-sm">Email</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              placeholder="Enter your email"
+            />
           </div>
         </div>
+
+        <div>
+          <label className="block text-white font-medium mb-2 text-sm">Password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+              className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              placeholder="Enter your password"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+        >
+          <span>{loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}</span>
+          {!loading && <ArrowRight className="w-4 h-4" />}
+        </button>
+      </form>
+
+      <div className="mt-4 text-center">
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="text-purple-400 hover:text-purple-300 transition-colors text-sm"
+        >
+          {isLogin 
+            ? "Don't have an account? Sign up" 
+            : "Already have an account? Sign in"
+          }
+        </button>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <p className="text-center text-gray-400 text-xs">
+          Demo credentials for testing:
+        </p>
+        <p className="text-center text-gray-300 text-xs mt-1">
+          Email: admin@cryptohub.com<br />
+          Password: admin123
+        </p>
       </div>
     </div>
   );
