@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { MapView } from '@/components/MapView';
 import { CryptoPrices } from '@/components/CryptoPrices';
@@ -5,6 +6,9 @@ import { LearningHub } from '@/components/LearningHub';
 import { AdminPanel } from '@/components/AdminPanel';
 import { AuthPage } from '@/components/AuthPage';
 import { EventDetails } from '@/components/EventDetails';
+import { BlogList } from '@/components/BlogList';
+import { AIChat } from '@/components/AIChat';
+import { CoinDetail } from '@/components/CoinDetail';
 import { Sidebar } from '@/components/Sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { BlockchainHub } from './BlockchainHub';
@@ -24,12 +28,17 @@ interface Event {
 }
 
 export const CryptoHubLayout = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, profile } = useAuth();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [currentView, setCurrentView] = useState<'map' | 'prices' | 'learning' | 'blockchain' | 'admin'>('map');
+  const [selectedCoin, setSelectedCoin] = useState<{ id: string; name: string } | null>(null);
+  const [currentView, setCurrentView] = useState<'map' | 'prices' | 'learning' | 'blockchain' | 'admin' | 'blogs' | 'chat'>('map');
 
   const handleEventSelect = (event: Event) => {
     setSelectedEvent(event);
+  };
+
+  const handleCoinSelect = (coinId: string, coinName: string) => {
+    setSelectedCoin({ id: coinId, name: coinName });
   };
 
   if (isLoading) {
@@ -45,7 +54,7 @@ export const CryptoHubLayout = () => {
 
   const renderContent = () => {
     if (currentView === 'admin') {
-      if (!user) {
+      if (!user || !profile?.is_admin) {
         return <AuthPage />;
       }
       return <AdminPanel />;
@@ -55,15 +64,45 @@ export const CryptoHubLayout = () => {
       return <EventDetails event={selectedEvent} onBack={() => setSelectedEvent(null)} />;
     }
 
+    if (selectedCoin) {
+      return (
+        <CoinDetail
+          coinId={selectedCoin.id}
+          coinName={selectedCoin.name}
+          onBack={() => setSelectedCoin(null)}
+        />
+      );
+    }
+
     switch (currentView) {
       case 'map':
         return <MapView onEventSelect={handleEventSelect} />;
       case 'prices':
-        return <CryptoPrices />;
+        return <CryptoPrices onCoinSelect={handleCoinSelect} />;
       case 'learning':
         return <LearningHub />;
       case 'blockchain':
         return <BlockchainHub />;
+      case 'blogs':
+        return (
+          <div className="h-full overflow-y-auto p-6 bg-gradient-to-br from-slate-900 to-slate-800">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-white mb-2">Blog Posts</h1>
+                <p className="text-gray-300">Latest insights and updates from the crypto community</p>
+              </div>
+              <BlogList />
+            </div>
+          </div>
+        );
+      case 'chat':
+        return (
+          <div className="h-full p-6 bg-gradient-to-br from-slate-900 to-slate-800">
+            <div className="max-w-4xl mx-auto h-full">
+              <AIChat />
+            </div>
+          </div>
+        );
       default:
         return <MapView onEventSelect={handleEventSelect} />;
     }

@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { MapPin, TrendingUp, BookOpen, Settings, Blocks } from 'lucide-react';
+import { MapPin, TrendingUp, BookOpen, Settings, Blocks, FileText, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
-type ViewType = 'map' | 'prices' | 'learning' | 'blockchain' | 'admin';
+type ViewType = 'map' | 'prices' | 'learning' | 'blockchain' | 'admin' | 'blogs' | 'chat';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -13,14 +13,16 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const menuItems = [
     { id: 'map', label: 'Events Map', icon: MapPin },
     { id: 'prices', label: 'Crypto Prices', icon: TrendingUp },
     { id: 'learning', label: 'Learning Hub', icon: BookOpen },
     { id: 'blockchain', label: 'Blockchain Tech', icon: Blocks },
-    { id: 'admin', label: 'Admin Panel', icon: Settings },
+    { id: 'blogs', label: 'Blog Posts', icon: FileText },
+    { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
+    ...(profile?.is_admin ? [{ id: 'admin', label: 'Admin Panel', icon: Settings }] : []),
   ];
 
   return (
@@ -61,6 +63,9 @@ export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
           <div className="text-sm text-gray-400">
             <p>Logged in as:</p>
             <p className="text-white font-medium truncate">{user.email}</p>
+            {profile?.is_admin && (
+              <p className="text-purple-400 text-xs">Admin</p>
+            )}
           </div>
         </div>
       )}
