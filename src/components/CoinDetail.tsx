@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import { useCoinDetail } from '@/hooks/useCoinDetail';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, CandlestickChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface CoinDetailProps {
   coinId: string;
@@ -12,7 +12,6 @@ interface CoinDetailProps {
 
 export const CoinDetail = ({ coinId, coinName, onBack }: CoinDetailProps) => {
   const { data: coinData, isLoading, error } = useCoinDetail(coinId);
-  const [chartType, setChartType] = useState<'line' | 'candle'>('line');
 
   if (isLoading) {
     return (
@@ -106,28 +105,6 @@ export const CoinDetail = ({ coinId, coinName, onBack }: CoinDetailProps) => {
         <div className="bg-black/40 backdrop-blur-xl border border-white/20 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Price Chart</h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setChartType('line')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  chartType === 'line'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                Line Chart
-              </button>
-              <button
-                onClick={() => setChartType('candle')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  chartType === 'candle'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                Candlestick
-              </button>
-            </div>
           </div>
 
           <div className="h-96">

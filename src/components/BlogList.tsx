@@ -8,10 +8,8 @@ interface BlogPost {
   id: string;
   title: string;
   content: string;
-  excerpt: string | null;
   created_at: string;
   author_id: string;
-  published: boolean;
   profiles: {
     full_name: string | null;
     email: string;
@@ -22,7 +20,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
-  author_id: string;
+  user_id: string;
   profiles: {
     full_name: string | null;
     email: string;
@@ -48,7 +46,6 @@ export const BlogList = () => {
           *,
           profiles!blog_posts_author_id_fkey(full_name, email)
         `)
-        .eq('published', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,7 +67,7 @@ export const BlogList = () => {
         .from('comments')
         .select(`
           *,
-          profiles!comments_author_id_fkey(full_name, email)
+          profiles!comments_user_id_fkey(full_name, email)
         `)
         .eq('blog_post_id', blogPostId)
         .order('created_at', { ascending: true });
@@ -136,7 +133,7 @@ export const BlogList = () => {
                 </div>
               ) : (
                 <div>
-                  <p>{post.excerpt || post.content.substring(0, 300)}...</p>
+                  <p>{post.content.substring(0, 300)}...</p>
                   <button
                     onClick={() => setSelectedPost(post.id)}
                     className="text-purple-400 hover:text-purple-300 mt-4 text-sm"

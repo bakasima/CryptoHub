@@ -23,8 +23,6 @@ interface BlogPost {
   id: string;
   title: string;
   content: string;
-  excerpt: string | null;
-  published: boolean;
   created_at: string;
   author_id: string;
 }
@@ -33,7 +31,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
-  author_id: string;
+  user_id: string;
   event_id: string | null;
   blog_post_id: string | null;
   profiles: {
@@ -100,7 +98,7 @@ export const AdminPanel = () => {
         .from('comments')
         .select(`
           *,
-          profiles!comments_author_id_fkey(full_name, email),
+          profiles!comments_user_id_fkey(full_name, email),
           events(title),
           blog_posts(title)
         `)
@@ -155,23 +153,6 @@ export const AdminPanel = () => {
       setBlogPosts(blogPosts.filter(blog => blog.id !== blogId));
     } catch (error) {
       console.error('Error deleting blog post:', error);
-    }
-  };
-
-  const handleTogglePublish = async (blogId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('blog_posts')
-        .update({ published: !currentStatus })
-        .eq('id', blogId);
-
-      if (error) throw error;
-      
-      setBlogPosts(blogPosts.map(blog => 
-        blog.id === blogId ? { ...blog, published: !currentStatus } : blog
-      ));
-    } catch (error) {
-      console.error('Error updating blog post:', error);
     }
   };
 
@@ -440,19 +421,9 @@ export const AdminPanel = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       <h3 className="text-white font-medium">{blog.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        blog.published 
-                          ? 'bg-green-900/30 text-green-400'
-                          : 'bg-yellow-900/30 text-yellow-400'
-                      }`}>
-                        {blog.published ? 'Published' : 'Draft'}
-                      </span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleTogglePublish(blog.id, blog.published)}
-                        className="text-blue-400 hover:text-blue-300"
-                      >
+                      <button className="text-blue-400 hover:text-blue-300">
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
@@ -469,7 +440,7 @@ export const AdminPanel = () => {
                       </button>
                     </div>
                   </div>
-                  <p className="text-gray-400 text-sm">{blog.excerpt || blog.content.substring(0, 150)}...</p>
+                  <p className="text-gray-400 text-sm">{blog.content.substring(0, 150)}...</p>
                   <p className="text-gray-500 text-xs mt-2">
                     Created: {new Date(blog.created_at).toLocaleDateString()}
                   </p>

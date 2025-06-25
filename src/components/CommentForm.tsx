@@ -25,7 +25,7 @@ export const CommentForm = ({ eventId, blogPostId, onCommentAdded, onCancel }: C
         .from('comments')
         .insert({
           content: content.trim(),
-          author_id: user.id,
+          user_id: user.id,
           event_id: eventId || null,
           blog_post_id: blogPostId || null
         });
