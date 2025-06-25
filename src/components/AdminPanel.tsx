@@ -158,7 +158,7 @@ export const AdminPanel = () => {
 
   const handleEventAdded = () => {
     setShowAddEvent(false);
-    fetchAdminData(); // Refresh the data after adding
+    fetchAdminData();
   };
 
   const handleBlogAdded = () => {
