@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,8 +6,9 @@ interface BlogPost {
   id: string;
   title: string;
   content: string;
-  excerpt: string | null;
-  published: boolean;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface BlogPostFormProps {
@@ -20,9 +20,7 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
-    excerpt: '',
-    published: false
+    content: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -30,9 +28,7 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
     if (blogPost) {
       setFormData({
         title: blogPost.title,
-        content: blogPost.content,
-        excerpt: blogPost.excerpt || '',
-        published: blogPost.published
+        content: blogPost.content
       });
     }
   }, [blogPost]);
@@ -46,8 +42,6 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
       const blogData = {
         title: formData.title,
         content: formData.content,
-        excerpt: formData.excerpt || null,
-        published: formData.published,
         author_id: user.id
       };
 
@@ -78,10 +72,10 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: value
     }));
   };
 
@@ -102,18 +96,6 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
         </div>
 
         <div>
-          <label className="block text-white font-medium mb-2">Excerpt</label>
-          <input
-            type="text"
-            name="excerpt"
-            value={formData.excerpt}
-            onChange={handleInputChange}
-            className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Brief description of the post"
-          />
-        </div>
-
-        <div>
           <label className="block text-white font-medium mb-2">Content</label>
           <textarea
             name="content"
@@ -124,20 +106,6 @@ export const BlogPostForm = ({ blogPost, onBlogAdded }: BlogPostFormProps) => {
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="Write your blog post content here..."
           />
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            name="published"
-            id="published"
-            checked={formData.published}
-            onChange={handleInputChange}
-            className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-500"
-          />
-          <label htmlFor="published" className="text-white font-medium">
-            Publish immediately
-          </label>
         </div>
 
         <button

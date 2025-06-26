@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Search, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +16,11 @@ interface Event {
   lng: number | null;
   crypto_focus: string[];
   image_url?: string;
+  is_paid?: boolean;
+  price?: number;
+  payment_currency?: string;
+  admin_wallet_address?: string;
+  created_by?: string;
 }
 
 interface MapViewProps {
@@ -87,7 +91,11 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
         description: 'The largest Bitcoin conference bringing together industry leaders, developers, and enthusiasts.',
         lat: 25.7617,
         lng: -80.1918,
-        crypto_focus: ['Bitcoin', 'Lightning Network']
+        crypto_focus: ['Bitcoin', 'Lightning Network'],
+        is_paid: true,
+        price: 299.99,
+        payment_currency: 'USD',
+        admin_wallet_address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
       },
       {
         title: 'Ethereum DevCon',
@@ -99,7 +107,11 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
         description: 'Developer conference focused on Ethereum ecosystem and smart contract development.',
         lat: 37.7749,
         lng: -122.4194,
-        crypto_focus: ['Ethereum', 'DeFi', 'Smart Contracts']
+        crypto_focus: ['Ethereum', 'DeFi', 'Smart Contracts'],
+        is_paid: true,
+        price: 0.5,
+        payment_currency: 'ETH',
+        admin_wallet_address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
       },
       {
         title: 'DeFi Summit',
@@ -111,7 +123,11 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
         description: 'Exploring the future of decentralized finance and yield farming strategies.',
         lat: 40.7128,
         lng: -74.0060,
-        crypto_focus: ['DeFi', 'Yield Farming', 'Uniswap']
+        crypto_focus: ['DeFi', 'Yield Farming', 'Uniswap'],
+        is_paid: false,
+        price: 0,
+        payment_currency: 'USD',
+        admin_wallet_address: null
       },
       {
         title: 'NFT Art Expo',
@@ -123,7 +139,11 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
         description: 'Showcase of digital art and NFT collections from renowned artists.',
         lat: 34.0522,
         lng: -118.2437,
-        crypto_focus: ['NFT', 'Digital Art', 'OpenSea']
+        crypto_focus: ['NFT', 'Digital Art', 'OpenSea'],
+        is_paid: true,
+        price: 50.00,
+        payment_currency: 'USD',
+        admin_wallet_address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
       }
     ];
 
@@ -257,9 +277,20 @@ export const MapView = ({ onEventSelect }: MapViewProps) => {
                         </div>
                       </div>
                     </div>
-                    <span className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-full text-sm capitalize">
-                      {event.event_type}
-                    </span>
+                    <div className="flex flex-col items-end space-y-2">
+                      <span className="bg-purple-900/30 text-purple-400 px-3 py-1 rounded-full text-sm capitalize">
+                        {event.event_type}
+                      </span>
+                      {event.is_paid ? (
+                        <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full text-sm">
+                          ${event.price} {event.payment_currency}
+                        </span>
+                      ) : (
+                        <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full text-sm">
+                          Free
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   <p className="text-gray-300 text-sm mb-4 line-clamp-2">

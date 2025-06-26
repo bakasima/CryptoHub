@@ -1,15 +1,15 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CryptoHubLayout } from '@/components/CryptoHubLayout';
-import { AuthProvider } from '@/hooks/useAuth';
-import { Toaster } from '@/components/ui/toaster';
 
 const Index = () => {
+  useEffect(() => {
+    console.log('Index component mounted');
+  }, []);
+
   return (
-    <AuthProvider>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <CryptoHubLayout />
-      <Toaster />
-    </AuthProvider>
+    </div>
   );
 };
 

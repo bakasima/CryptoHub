@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MessageSquare, Calendar, User } from 'lucide-react';
 
@@ -6,7 +5,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
-  author_id: string;
+  user_id: string;
   event_id: string | null;
   blog_post_id: string | null;
   profiles: {

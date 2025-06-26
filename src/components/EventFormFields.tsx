@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface EventFormData {
@@ -9,6 +8,10 @@ interface EventFormData {
   location: string;
   attendees: number;
   description: string;
+  is_paid: boolean;
+  price: number;
+  payment_currency: string;
+  admin_wallet_address: string;
 }
 
 interface EventFormFieldsProps {
@@ -23,6 +26,14 @@ export const EventFormFields = ({ formData, onInputChange }: EventFormFieldsProp
     { value: 'meetup', label: 'Meetup' },
     { value: 'exhibition', label: 'Exhibition' },
     { value: 'hackathon', label: 'Hackathon' }
+  ];
+
+  const currencies = [
+    { value: 'USD', label: 'USD ($)' },
+    { value: 'ETH', label: 'ETH (Ξ)' },
+    { value: 'BTC', label: 'BTC (₿)' },
+    { value: 'USDC', label: 'USDC' },
+    { value: 'USDT', label: 'USDT' }
   ];
 
   return (
@@ -105,6 +116,97 @@ export const EventFormFields = ({ formData, onInputChange }: EventFormFieldsProp
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
+      </div>
+
+      {/* Payment Section */}
+      <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+        <h3 className="text-white font-semibold text-lg mb-4">Payment Information</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="is_paid"
+              name="is_paid"
+              checked={formData.is_paid}
+              onChange={(e) => {
+                const event = {
+                  target: {
+                    name: 'is_paid',
+                    value: e.target.checked.toString()
+                  }
+                } as React.ChangeEvent<HTMLInputElement>;
+                onInputChange(event);
+              }}
+              className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-500 focus:ring-2"
+            />
+            <label htmlFor="is_paid" className="text-white font-medium">
+              Paid Event
+            </label>
+          </div>
+
+          {formData.is_paid && (
+            <>
+              <div>
+                <label className="block text-white font-medium mb-2">Price</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={onInputChange}
+                  min="0"
+                  step="0.01"
+                  required={formData.is_paid}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-medium mb-2">Currency</label>
+                <select
+                  name="payment_currency"
+                  value={formData.payment_currency}
+                  onChange={onInputChange}
+                  required={formData.is_paid}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  {currencies.map(currency => (
+                    <option key={currency.value} value={currency.value} className="bg-slate-800">
+                      {currency.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+
+        {formData.is_paid && (
+          <div className="mt-6">
+            <label className="block text-white font-medium mb-2">Admin Wallet Address (for receiving payments)</label>
+            <input
+              type="text"
+              name="admin_wallet_address"
+              value={formData.admin_wallet_address}
+              onChange={onInputChange}
+              required={formData.is_paid}
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="0x..."
+            />
+            <p className="text-gray-400 text-sm mt-1">
+              This is the wallet address where event payments will be sent
+            </p>
+          </div>
+        )}
+
+        {formData.is_paid && (
+          <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+            <p className="text-purple-300 text-sm">
+              💳 Attendees will be able to pay for this event using their connected wallet
+            </p>
+          </div>
+        )}
       </div>
 
       <div>

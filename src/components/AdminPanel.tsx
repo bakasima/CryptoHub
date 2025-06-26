@@ -1,39 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Users, TrendingUp, Calendar, Settings, Plus, Edit, Trash2, Eye, MessageSquare, FileText, LogOut, Upload, X } from 'lucide-react';
+import { Users, TrendingUp, Calendar, Settings, Plus, Edit, Trash2, Eye, MessageSquare, FileText, LogOut, Upload, X, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { AddEventForm } from './AddEventForm';
 import { BlogPostForm } from './BlogPostForm';
 import { CommentsView } from './CommentsView';
+import { Tables } from '@/integrations/supabase/types';
+import { updateExistingEvents } from '@/utils/updateEvents';
 
-interface Event {
-  id: string;
-  title: string;
-  event_type: string;
-  date: string;
-  time: string;
-  location: string;
-  attendees: number;
-  description: string | null;
-  crypto_focus: string[];
-  image_url?: string;
-}
-
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  author_id: string;
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  event_id: string | null;
-  blog_post_id: string | null;
+type Event = Tables<'events'>;
+type BlogPost = Tables<'blog_posts'>;
+type Comment = Tables<'comments'> & {
   profiles: {
     full_name: string | null;
     email: string;
@@ -44,10 +21,10 @@ interface Comment {
   blog_posts?: {
     title: string;
   };
-}
+};
 
 export const AdminPanel = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, profile } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -64,6 +41,11 @@ export const AdminPanel = () => {
   });
 
   useEffect(() => {
+    console.log('AdminPanel mounted');
+    console.log('User:', user);
+    console.log('Profile:', profile);
+    console.log('Is Admin:', profile?.is_admin);
+    
     if (user) {
       fetchAdminData();
     }
@@ -157,6 +139,7 @@ export const AdminPanel = () => {
   };
 
   const handleEventAdded = () => {
+    console.log('Event added, refreshing data...');
     setShowAddEvent(false);
     fetchAdminData();
   };
@@ -171,12 +154,61 @@ export const AdminPanel = () => {
     await signOut();
   };
 
+  const makeUserAdmin = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Making user admin...');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: true })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error making user admin:', error);
+        alert('Error making user admin: ' + error.message);
+      } else {
+        console.log('User made admin successfully');
+        alert('You are now an admin! Please refresh the page.');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error making user admin:', error);
+      alert('Error making user admin: ' + error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-white">Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Debug section for non-admin users
+  if (!profile?.is_admin) {
+    return (
+      <div className="h-full overflow-y-auto p-6 bg-gradient-to-br from-slate-900 to-slate-800">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-yellow-400 mb-4">Admin Access Required</h2>
+            <div className="text-yellow-300 text-sm space-y-2 mb-4">
+              <p>User ID: {user?.id || 'Not logged in'}</p>
+              <p>User Email: {user?.email || 'Not logged in'}</p>
+              <p>Profile Loaded: {profile ? 'Yes' : 'No'}</p>
+              <p>Admin Status: {profile?.is_admin ? 'Admin' : 'Not Admin'}</p>
+            </div>
+            <button
+              onClick={makeUserAdmin}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+            >
+              Make Me Admin
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -331,6 +363,16 @@ export const AdminPanel = () => {
                   <Plus className="w-5 h-5" />
                   <span>Create Blog Post</span>
                 </button>
+                <button
+                  onClick={async () => {
+                    await updateExistingEvents();
+                    fetchAdminData(); // Refresh data after update
+                  }}
+                  className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  <span>Update Event Payments</span>
+                </button>
               </div>
             </div>
 
@@ -386,6 +428,11 @@ export const AdminPanel = () => {
                     <p>📅 {event.date} at {event.time}</p>
                     <p>📍 {event.location}</p>
                     <p>👥 {event.attendees} attendees</p>
+                    {event.is_paid ? (
+                      <p className="text-green-400">💰 ${event.price} {event.payment_currency}</p>
+                    ) : (
+                      <p className="text-blue-400">🆓 Free Event</p>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {event.crypto_focus.map((crypto) => (
