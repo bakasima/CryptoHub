@@ -2,13 +2,13 @@
 export const config = {
   // OpenAI Configuration
   openai: {
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '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',
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
   },
   
   // Blockchain Configuration
   blockchain: {
     rpcUrl: import.meta.env.VITE_RPC_URL || 'https://rpc.sepolia.org',
-    privateKey: import.meta.env.VITE_PRIVATE_KEY || '0x75dd4dfb50773f1bb5929f1e7690bdef4bd184023e9161b6d5c82009d72643b8',
+    privateKey: import.meta.env.VITE_PRIVATE_KEY || '',
     network: 'sepolia',
     chainId: 11155111, // Sepolia testnet
   },
@@ -16,8 +16,8 @@ export const config = {
   // AgentKit Configuration
   agentKit: {
     network: import.meta.env.VITE_CDP_AGENT_KIT_NETWORK || 'base-mainnet',
-    apiKeyName: import.meta.env.VITE_CDP_API_KEY_NAME || 'e38ded88-93d7-43ab-b06d-78900b71715f',
-    apiKeySecret: import.meta.env.VITE_CDP_API_KEY_SECRET_KEY || 'fCmw3nTyQ5pnmb9x25gIaBPXIq5JirJJQ8ZJFi/HIvyz96tnvB39RrdDE72mYmDYlh8/P2ioDDLCJVN/oOZjKw==',
+    apiKeyName: import.meta.env.VITE_CDP_API_KEY_NAME || '',
+    apiKeySecret: import.meta.env.VITE_CDP_API_KEY_SECRET_KEY || '',
   },
   
   // Crypto API Configuration
@@ -26,11 +26,32 @@ export const config = {
     cryptocompareApiKey: import.meta.env.VITE_CRYPTOCOMPARE_API_KEY || '',
   },
   
-  // Feature Flags
+  // Feature Flags - Enable features only if API keys are available
   features: {
-    aiEnabled: true, // Always enabled with provided key
-    blockchainEnabled: true, // Always enabled with provided RPC
-    agentKitEnabled: true, // Always enabled with provided keys
-    walletConnectEnabled: true,
+    aiEnabled: !!import.meta.env.VITE_OPENAI_API_KEY,
+    blockchainEnabled: !!import.meta.env.VITE_PRIVATE_KEY,
+    agentKitEnabled: !!(import.meta.env.VITE_CDP_API_KEY_NAME && import.meta.env.VITE_CDP_API_KEY_SECRET_KEY),
+    walletConnectEnabled: true, // Always enabled as it doesn't require API keys
+  }
+};
+
+// Helper function to check if features are available
+export const isFeatureEnabled = (feature: keyof typeof config.features) => {
+  return config.features[feature];
+};
+
+// Helper function to get API key with warning
+export const getApiKey = (service: 'openai' | 'blockchain' | 'agentkit' | 'crypto') => {
+  switch (service) {
+    case 'openai':
+      return config.openai.apiKey;
+    case 'blockchain':
+      return config.blockchain.privateKey;
+    case 'agentkit':
+      return { name: config.agentKit.apiKeyName, secret: config.agentKit.apiKeySecret };
+    case 'crypto':
+      return { coingecko: config.crypto.coingeckoApiKey, cryptocompare: config.crypto.cryptocompareApiKey };
+    default:
+      return '';
   }
 }; 

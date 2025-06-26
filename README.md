@@ -157,6 +157,28 @@ Create a public bucket named `event-images` for storing event images.
 
 ## 🚀 Deployment
 
+### GitHub Pages Deployment
+1. **Set up GitHub Secrets** (Required for API features):
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Add the following secrets:
+     - `VITE_OPENAI_API_KEY`: Your OpenAI API key
+     - `VITE_RPC_URL`: Blockchain RPC URL (optional)
+     - `VITE_PRIVATE_KEY`: Your private key for blockchain features (optional)
+     - `VITE_CDP_AGENT_KIT_NETWORK`: AgentKit network (optional)
+     - `VITE_CDP_API_KEY_NAME`: AgentKit API key name (optional)
+     - `VITE_CDP_API_KEY_SECRET_KEY`: AgentKit API key secret (optional)
+     - `VITE_COINGECKO_API_KEY`: CoinGecko API key (optional)
+     - `VITE_CRYPTOCOMPARE_API_KEY`: CryptoCompare API key (optional)
+
+2. **Enable GitHub Pages**:
+   - Go to repository Settings → Pages
+   - Source: "GitHub Actions"
+   - The workflow will automatically deploy on push to main branch
+
+3. **Access your site**: `https://yourusername.github.io/CryptoHub`
+
+**Note**: Without API keys, the app will run with limited functionality (wallet connection and basic features will work, but AI features will be disabled).
+
 ### Vercel Deployment
 1. Connect your GitHub repository to Vercel
 2. Set environment variables in Vercel dashboard
