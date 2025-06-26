@@ -2,6 +2,8 @@
 
 A comprehensive cryptocurrency platform powered by AI and blockchain technology, featuring event management, portfolio tracking, AI trading assistance, and real-time market analysis.
 
+**Latest Update**: GitHub Actions deployment configured for automatic deployment to GitHub Pages.
+
 ## 🚀 Features
 
 ### Core Features
